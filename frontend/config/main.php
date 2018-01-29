@@ -38,11 +38,13 @@ return [
             'errorAction' => 'site/error',
         ],
         'urlManager' => [
+            'class' => 'yii\web\UrlManager', //clase UrlManager
             'enablePrettyUrl' => true,
             'showScriptName' => false,
-            'rules' => [
-                //'' => 'site/index',                                
-                //'<controller:\w+>/<action:\w+>/' => '<controller>/<action>',
+            'rules' => [                
+                '<controller:\w+>/<id:\d+>' => '<controller>/view',
+                //'<controller:\w+>/<action:\w+>/<id:\d+>' => '<controller>/<action>',
+                '<controller:\w+>/<action:\w+>' => '<controller>/<action>',
             ],
         ],
     ],

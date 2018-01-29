@@ -17,6 +17,16 @@ return [
             //'baseUrl' => '/admin',
             'csrfParam' => '_csrf-backend',
         ],
+        'view' => [
+         	'theme' => [
+             	'class' => '\app\components\CTheme',
+             	'pathMap' => [
+                        '@app/views' => '@app/themes/adminLTE',
+                    ],
+             	'baseUrl' => '@web/themes/adminLTE',
+             	'themeName' => 'adminLTE',
+            ],
+    	],
         'user' => [
             'identityClass' => 'common\models\User',
             'enableAutoLogin' => true,
@@ -39,11 +49,13 @@ return [
             'errorAction' => 'site/error',
         ],        
         'urlManager' => [
+            'class' => 'yii\web\UrlManager', //clase UrlManager
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                //'' => 'site/index',                                
-                //'<controller:\w+>/<action:\w+>/' => '<controller>/<action>',
+                '<controller:\w+>/<id:\d+>' => '<controller>/view',
+                //'<controller:\w+>/<action:\w+>/<id:\d+>' => '<controller>/<action>',
+                '<controller:\w+>/<action:\w+>' => '<controller>/<action>',
             ],
         ],
     ],
