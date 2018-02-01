@@ -3,6 +3,7 @@ namespace common\models;
 
 use Yii;
 use yii\base\Model;
+use app\models\Usuario;
 
 /**
  * Login form
@@ -14,7 +15,7 @@ class LoginForm extends Model
     public $rememberMe = true;
 
     private $_user;
-
+    private $_errorSession = false;
 
     /**
      * @inheritdoc
@@ -43,7 +44,7 @@ class LoginForm extends Model
         if (!$this->hasErrors()) {
             $user = $this->getUser();
             if (!$user || !$user->validatePassword($this->password)) {
-                $this->addError($attribute, 'Incorrect username or password.');
+                $this->addError($attribute, Yii::t("login",'Incorrect username or password.'));
             }
         }
     }
@@ -55,11 +56,53 @@ class LoginForm extends Model
      */
     public function login()
     {
+//        if ($this->validate()) {
+//            return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
+//        }
+//        return false;
         if ($this->validate()) {
-            return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
+            $usuario = Usuario::findByUsername($this->username);
+            if(isset($usuario)){
+                $status = $usuario->validatePassword($this->password);
+                $status_activo = $usuario->usu_estado_activo;
+                $status_logico = $usuario->usu_est_log;
+                $status_link = $usuario->usu_link_activo;
+                if($status_activo == 1 && ($status_link == "" || is_null($status_link)) && $status_logico == 1){ // si es usuario activo
+                    if($status && isset($status)){
+                        //$usuario->init();
+                        $usuario->createSession();
+                        $usuario->usu_last_login = date("Y-m-d H:i:s");
+                        $usuario->update(true, array("usu_last_login"));
+                        Yii::$app->user->login($usuario, 0);
+                        Yii::$app->user->setIdentity($usuario);
+                    }elseif ($status_logico == 0) { // account removed
+                        $this->setErrorSession(true);
+                        Yii::$app->session->setFlash('error',Yii::t("login","<h4>Error</h4>Invalid Account."));
+                        $usuario->destroySession();
+                        return false;
+                    }else { // error password
+                        $this->setErrorSession(true);
+                        Yii::$app->session->setFlash('error',Yii::t("login","<h4>Error</h4>Incorrect username or password."));
+                        $usuario->destroySession();
+                        return false;
+                    }
+                }else{ // account disabled
+                    $this->setErrorSession(true);
+                    Yii::$app->session->setFlash('error',Yii::t("login","<h4>Error</h4>Account is disabled. Please confirm the account with link activation in your email account or reset your password."));
+                    $usuario->destroySession();
+                    return false;
+                }
+                return $status;
+            }else{
+                $this->setErrorSession(true);
+                Yii::$app->session->setFlash('error',Yii::t("login","<h4>Error</h4>Invalid Account. Account can be disabled please please confirm the account with link activation in your email account or reset your password."));
+                return false;
+            }
+        } else {
+            $this->setErrorSession(true);
+            Yii::$app->session->setFlash('error',Yii::t("login","<h4>Error</h4>Incorrect username or password."));
+            return false;
         }
-        
-        return false;
     }
 
     /**
@@ -74,5 +117,13 @@ class LoginForm extends Model
         }
 
         return $this->_user;
+    }
+    
+    public function getErrorSession() {
+        return $this->_errorSession;
+    }
+    
+    public function setErrorSession($error){
+        $this->_errorSession = $error;
     }
 }

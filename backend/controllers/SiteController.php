@@ -70,15 +70,41 @@ class SiteController extends Controller
      */
     public function actionLogin()
     {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+//        if (!Yii::$app->user->isGuest) {
+//            return $this->goHome();
+//        }
+//
+//        $model = new LoginForm();
+//        if ($model->load(Yii::$app->request->post()) && $model->login()) {
+//            return $this->goBack();
+//        } else {
+//            return $this->render('login', [
+//                'model' => $model,
+//            ]);
+//        }
+        if (!\Yii::$app->user->isGuest) {
+            return $this->redirect(Url::base(true).'/site/login');
         }
-
         $model = new LoginForm();
+        
+        if(Yii::$app->session->get("PB_isuser", false)){
+            // setting default url
+            $mod = new Modulo();
+            $link =  $mod->getFirstModuleLink();
+            $url = Url::base(true) . "/" . $link["url"];
+            return $this->goBack($url);
+        }
+        
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+            // setting default url
+            $mod = new Modulo();
+            $link =  $mod->getFirstModuleLink();
+            $url = Url::base(true) . "/" . $link["url"];
+            return $this->goBack($url);
         } else {
-            return $this->render('login', [
+            if($model->getErrorSession())
+                Yii::$app->session->setFlash('loginFormSubmitted');
+                return $this->renderFile('@themes/' . \Yii::$app->getView()->theme->themeName . '/layouts/login.php', [
                 'model' => $model,
             ]);
         }
